@@ -46,8 +46,8 @@ impl ReqwestExt for reqwest::RequestBuilder {
             .and_then(|v| {
                 v.to_str().ok()
             })
-            .map(|v| {
-                v.to_string()
+            .and_then(|v| {
+                v.parse::<u64>().ok()
             });
         let desc = headers.get("X-Error")
             .and_then(|v| {

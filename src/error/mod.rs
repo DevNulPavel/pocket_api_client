@@ -19,10 +19,12 @@ quick_error!{
             context(context: String, err: serde_json::Error) -> (context, err)
         }
 
-        PocketApiError(http_status: reqwest::StatusCode, err_code: String, err_desc: String){
+        PocketApiError(http_status: reqwest::StatusCode, err_code: u64, err_desc: String){
+            display("http_code: {}, pocket_err: {}, desc: {}", http_status, err_code, err_desc)
         }
 
         PocketUnknownApiError(http_status: reqwest::StatusCode){
+            display("http_code: {}", http_status)
         }
     }
 }

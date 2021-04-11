@@ -1,4 +1,8 @@
-
+use std::{
+    sync::{
+        Arc
+    }
+};
 use serde_json::{
     json
 };
@@ -13,12 +17,18 @@ use crate::{
     error::{
         PocketApiError
     },
+    config::{
+        PocketApiConfig
+    },
     responses::{
         CodeRequestResponse,
         TokenRequestResponse
     },
     helpers::{
         ReqwestExt
+    },
+    request_builder::{
+        PocketRequestBuilder
     }
 };
 
@@ -35,28 +45,14 @@ pub struct AuthInfo{
 
 #[derive(Debug)]
 pub struct PocketApiTokenReceiver{
-    http_client: reqwest::Client,
-    base_url: reqwest::Url,
-    consumer_api_key: String
+    request_builder: PocketRequestBuilder
 }
 
 impl PocketApiTokenReceiver {
-    pub fn new(http_client: reqwest::Client, 
-               consumer_api_key: String) -> PocketApiTokenReceiver {
+    pub fn new(config: Arc<PocketApiConfig>) -> PocketApiTokenReceiver {
+        let request_builder = PocketRequestBuilder::new(config);
         PocketApiTokenReceiver{
-            http_client,
-            base_url: reqwest::Url::parse("https://getpocket.com/").unwrap(),
-            consumer_api_key
-        }
-    }
-
-    pub fn new_with_base_url(http_client: reqwest::Client, 
-                             base_url: reqwest::Url,
-                             consumer_api_key: String) -> PocketApiTokenReceiver {
-        PocketApiTokenReceiver{
-            http_client,
-            base_url,
-            consumer_api_key
+            request_builder
         }
     }
 
@@ -64,31 +60,18 @@ impl PocketApiTokenReceiver {
     /// После этого уже можно полноценно получать токен
     #[instrument(skip(self))]
     pub async fn optain_user_auth_info(&self, redirect_uri: String) -> Result<AuthInfo, PocketApiError>{
-        let mut url = self.base_url.clone();
-        {
-            url
-                .path_segments_mut()
-                .map_err(|_|{
-                    PocketApiError::InvalidBaseUrl
-                })?
-                .push("v3")
-                .push("oauth")
-                .push("request");
-        }
-        debug!("Request url: {}", url);
+        let req = self
+            .request_builder
+            .clone()
+            .join_path("oauth".to_string())
+            .join_path("request".to_string())
+            .json(json!({
+                "redirect_uri": redirect_uri
+            }))
+            .build()?;
         
         // Получаем код для авторизации пользователя для формирования ссылки ниже
-        let resp = self
-            .http_client
-            .post(url)
-            .header("Content-Type", "application/json; charset=UTF-8")
-            .header("X-Accept", "application/json")
-            .json(&json!(
-                {
-                    "consumer_key": self.consumer_api_key,
-                    "redirect_uri": redirect_uri
-                }
-            ))
+        let resp = req
             .receive_json_checked::<CodeRequestResponse>("Token obtain error")
             .await?; 
         debug!("Received code: {}", resp.code);
@@ -111,31 +94,18 @@ impl PocketApiTokenReceiver {
     /// Метод получения токена после подтверждения прав
     #[instrument(skip(self))]
     pub async fn receive_token(&self, code: String) -> Result<String, PocketApiError>{
-        let mut url = self.base_url.clone();
-        {
-            url
-                .path_segments_mut()
-                .map_err(|_|{
-                    PocketApiError::InvalidBaseUrl
-                })?
-                .push("v3")
-                .push("oauth")
-                .push("authorize");
-        }
-        debug!("Request url: {}", url);
+        let req = self
+            .request_builder
+            .clone()
+            .join_path("oauth".to_string())
+            .join_path("authorize".to_string())
+            .json(json!({
+                "code": code
+            }))
+            .build()?;
         
         // Получаем код для авторизации пользователя для формирования ссылки ниже
-        let resp = self
-            .http_client
-            .post(url)
-            .header("Content-Type", "application/json; charset=UTF-8")
-            .header("X-Accept", "application/json")
-            .json(&json!(
-                {
-                    "consumer_key": self.consumer_api_key,
-                    "code": code
-                }
-            ))
+        let resp = req
             .receive_json_checked::<TokenRequestResponse>("Token obtain error")
             .await?; 
         debug!("Received token: {}", resp);
@@ -143,6 +113,3 @@ impl PocketApiTokenReceiver {
         Ok(resp.access_token)
     }
 }
-
-
-// TODO: Mock testing

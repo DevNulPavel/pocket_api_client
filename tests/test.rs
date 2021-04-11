@@ -1,6 +1,9 @@
 use std::{
     env::{
         self
+    },
+    sync::{
+        Arc
     }
 };
 use tracing::{
@@ -16,7 +19,9 @@ use tracing_subscriber::{
     }
 };
 use pocket_api_client::{
-    PocketApiTokenReceiver
+    PocketApiConfig,
+    PocketApiTokenReceiver,
+    PocketApiClient
 };
 
 fn initialize_logs() {
@@ -35,26 +40,18 @@ fn initialize_logs() {
     tracing::subscriber::set_global_default(full_subscriber).unwrap();
 }
 
-#[tokio::test]
-async fn library_integration_test(){
-    initialize_logs();
+async fn receive_token(config: Arc<PocketApiConfig>) -> String{
+// Получатель токена
+    let token_receiver = PocketApiTokenReceiver::new(config.clone());
 
-    dotenv::from_filename(".test.env").expect("Environment file reading failed");
-
-    // Переменные окружения
-    let pocket_consumer_id = env::var("POCKET_CONSUMER_ID").expect("Missing env variable");
-
-    // Создаем HTTP клиента, можно спокойно клонировать, внутри Arc
-    let http_client = Client::new();
-
-    let client = PocketApiTokenReceiver::new(http_client, pocket_consumer_id);
-
-    let auth_info = client
+    // Инфа по аутентфикации и авторизации пользователя
+    let auth_info = token_receiver
         .optain_user_auth_info("http://127.0.0.1:9999/callback".to_string())
         .await
         .expect("Auth info receive failed");
     debug!("Auth info: {}", auth_info);
 
+    // Открываем браузер для подтверждения
     webbrowser::open(auth_info.auth_url.as_str())
         .expect("Browser open failed");
 
@@ -81,9 +78,31 @@ async fn library_integration_test(){
     stop_tx.send(()).unwrap();
     j.await.unwrap();
 
-    let token = client
+    // Непосредственно получение токена
+    let token = token_receiver
         .receive_token(auth_info.code)
         .await
         .expect("Token receive failed");
     debug!("Received token: {}", token);
+
+    token
+}
+
+#[tokio::test]
+async fn library_integration_test(){
+    initialize_logs();
+
+    dotenv::from_filename(".test.env").expect("Environment file reading failed");
+
+    // Переменные окружения
+    let pocket_consumer_id = env::var("POCKET_CONSUMER_ID").expect("Missing env variable");
+
+    // Общий конфиг
+    let config = Arc::new(PocketApiConfig::new_default(Client::new(), pocket_consumer_id));
+
+    // Токен пользователя
+    let user_token = receive_token(config.clone()).await;
+
+    // Клиент
+    let api_client = PocketApiClient::new(config, user_token);
 }
