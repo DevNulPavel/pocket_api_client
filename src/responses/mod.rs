@@ -1,26 +1,8 @@
-use std::{
-    collections::{
-        HashMap
-    },
-    str::{
-        FromStr
-    },
-    fmt::{
-        Display
-    }
+use derive_more::{
+    Display
 };
 use serde::{
-    Deserialize,
-    Serialize,
-    de::{
-        self, 
-        Deserializer
-    }
-};
-use serde_json::{
-    value::{
-        Value
-    }
+    Deserialize
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -52,7 +34,16 @@ impl<D> DataOrErrorResponse<D> {
 
 //////////////////////////////////////////////////////////////////////
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Display)]
 pub struct CodeRequestResponse{
     pub code: String
+}
+
+//////////////////////////////////////////////////////////////////////
+
+#[derive(Deserialize, Debug, Display)]
+#[display(fmt = "access_token = {}, username = {}", access_token, username)]
+pub struct TokenRequestResponse{
+    pub access_token: String,
+    pub username: String,
 }
