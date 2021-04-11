@@ -105,4 +105,18 @@ async fn library_integration_test(){
 
     // Клиент
     let api_client = PocketApiClient::new(config, user_token);
+
+    // Добавляем итем
+    let item = api_client
+        .add("https://google.com".to_string(), None)
+        .await
+        .expect("Insert failed");
+    debug!("New item: {:#?}", item);
+
+    // Список итемов
+    let all_items = api_client
+        .get_all()
+        .await
+        .expect("Get all failed");
+    debug!("All items: {:#?}", all_items);
 }

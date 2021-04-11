@@ -26,5 +26,9 @@ quick_error!{
         PocketUnknownApiError(http_status: reqwest::StatusCode){
             display("http_code: {}", http_status)
         }
+
+        PocketInvalidApiStatus(status: i64){
+            display("status: {}", status)
+        }
     }
 }
