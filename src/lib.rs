@@ -15,6 +15,9 @@ pub use crate::{
     },
     client::{
         PocketApiClient
+    },
+    error::{
+        PocketApiError
     }
 };
 
