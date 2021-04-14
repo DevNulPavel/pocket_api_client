@@ -40,28 +40,43 @@ pub struct PocketApiAuthInfo{
 
 #[derive(Debug)]
 pub struct PocketApiTokenReceiver{
-    request_builder: PocketRequestBuilder
+    request_builder: PocketRequestBuilder,
+    redirect_base_uri: url::Url
 }
 
 impl PocketApiTokenReceiver {
-    pub fn new(config: PocketApiConfig) -> PocketApiTokenReceiver {
+    pub fn new(config: PocketApiConfig, redirect_base_uri: url::Url) -> PocketApiTokenReceiver {
         let request_builder = PocketRequestBuilder::new(config);
         PocketApiTokenReceiver{
-            request_builder
+            request_builder,
+            redirect_base_uri
         }
     }
 
     /// Данный метод выдает url для подтверждения пользователем разрешений на использование приложения
     /// После этого уже можно полноценно получать токен
     #[instrument(skip(self))]
-    pub async fn optain_user_auth_info(&self, redirect_uri: String) -> Result<PocketApiAuthInfo, PocketApiError>{
+    pub async fn optain_user_auth_info(&self, query_params: &[(&str, &str)]) -> Result<PocketApiAuthInfo, PocketApiError>{
+        let result_url = {
+            let mut url = self.redirect_base_uri.clone();
+            let mut query_pairs = url
+                .query_pairs_mut();
+            for (key, val) in query_params {
+                query_pairs.append_pair(key, val);
+            }
+            drop(query_pairs);
+            url
+        };
+
+        debug!("User auth result url: {}", result_url.as_str());
+
         let req = self
             .request_builder
             .clone()
             .join_path("oauth".to_string())
             .join_path("request".to_string())
             .json(json!({
-                "redirect_uri": redirect_uri
+                "redirect_uri": result_url.as_str()
             }))
             .build()?;
         
@@ -77,7 +92,7 @@ impl PocketApiTokenReceiver {
         auth_url
             .query_pairs_mut()
             .append_pair("request_token", &resp.code)
-            .append_pair("redirect_uri", &redirect_uri);
+            .append_pair("redirect_uri", result_url.as_str());
         debug!("Auth url: {}", auth_url);
 
         Ok(PocketApiAuthInfo{

@@ -38,12 +38,17 @@ fn initialize_logs() {
 }
 
 async fn receive_token(config: PocketApiConfig) -> String{
-// Получатель токена
-    let token_receiver = PocketApiTokenReceiver::new(config.clone());
+    let redirect_url = "http://127.0.0.1:9999/callback"
+        .parse()
+        .unwrap();
+
+    // Получатель токена
+    let token_receiver = PocketApiTokenReceiver::new(config.clone(), 
+                                                     redirect_url);
 
     // Инфа по аутентфикации и авторизации пользователя
     let auth_info = token_receiver
-        .optain_user_auth_info("http://127.0.0.1:9999/callback?param=1".to_string())
+        .optain_user_auth_info(&[("test_key", "test_val")])
         .await
         .expect("Auth info receive failed");
     debug!("Auth info: {}", auth_info);
