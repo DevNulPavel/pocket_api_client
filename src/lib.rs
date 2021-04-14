@@ -11,7 +11,8 @@ pub use crate::{
         PocketApiConfig  
     },
     token_receiver::{
-        PocketApiTokenReceiver
+        PocketApiTokenReceiver,
+        PocketApiAuthInfo
     },
     client::{
         PocketApiClient

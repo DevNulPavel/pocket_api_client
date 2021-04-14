@@ -31,7 +31,7 @@ use crate::{
 
 #[derive(Debug, Display)]
 #[display(fmt = "code = {}, auth_url = {}", code, auth_url)]
-pub struct AuthInfo{
+pub struct PocketApiAuthInfo{
     pub code: String,
     pub auth_url: reqwest::Url
 }
@@ -56,7 +56,7 @@ impl PocketApiTokenReceiver {
     /// Данный метод выдает url для подтверждения пользователем разрешений на использование приложения
     /// После этого уже можно полноценно получать токен
     #[instrument(skip(self))]
-    pub async fn optain_user_auth_info(&self) -> Result<AuthInfo, PocketApiError>{
+    pub async fn optain_user_auth_info(&self) -> Result<PocketApiAuthInfo, PocketApiError>{
         let req = self
             .request_builder
             .clone()
@@ -82,7 +82,7 @@ impl PocketApiTokenReceiver {
             .append_pair("redirect_uri", &self.redirect_uri);
         debug!("Auth url: {}", auth_url);
 
-        Ok(AuthInfo{
+        Ok(PocketApiAuthInfo{
             auth_url,
             code: resp.code
         })
@@ -90,14 +90,14 @@ impl PocketApiTokenReceiver {
 
     /// Метод получения токена после подтверждения прав
     #[instrument(skip(self))]
-    pub async fn receive_token(&self, code: String) -> Result<String, PocketApiError>{
+    pub async fn receive_token(&self, auth_code: String) -> Result<String, PocketApiError>{
         let req = self
             .request_builder
             .clone()
             .join_path("oauth".to_string())
             .join_path("authorize".to_string())
             .json(json!({
-                "code": code
+                "code": auth_code
             }))
             .build()?;
         
