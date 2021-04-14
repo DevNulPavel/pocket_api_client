@@ -1,7 +1,4 @@
 use std::{
-    sync::{
-        Arc
-    },
     collections::{
         HashMap
     }
@@ -41,7 +38,7 @@ pub struct PocketApiClient{
 }
 
 impl PocketApiClient {
-    pub fn new(config: Arc<PocketApiConfig>, user_token: String) -> PocketApiClient {
+    pub fn new(config: PocketApiConfig, user_token: String) -> PocketApiClient {
         let request_builder = PocketRequestBuilder::new(config)
             .user_api_token(user_token);
         PocketApiClient{

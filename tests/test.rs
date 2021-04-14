@@ -1,9 +1,6 @@
 use std::{
     env::{
         self
-    },
-    sync::{
-        Arc
     }
 };
 use tracing::{
@@ -40,7 +37,7 @@ fn initialize_logs() {
     tracing::subscriber::set_global_default(full_subscriber).unwrap();
 }
 
-async fn receive_token(config: Arc<PocketApiConfig>) -> String{
+async fn receive_token(config: PocketApiConfig) -> String{
 // Получатель токена
     let token_receiver = PocketApiTokenReceiver::new(config.clone());
 
@@ -98,7 +95,7 @@ async fn library_integration_test(){
     let pocket_consumer_id = env::var("POCKET_CONSUMER_ID").expect("Missing env variable");
 
     // Общий конфиг
-    let config = Arc::new(PocketApiConfig::new_default(Client::new(), pocket_consumer_id));
+    let config = PocketApiConfig::new_default(Client::new(), pocket_consumer_id);
 
     // Токен пользователя
     let user_token = receive_token(config.clone()).await;

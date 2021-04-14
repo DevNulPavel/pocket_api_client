@@ -1,8 +1,3 @@
-use std::{
-    sync::{
-        Arc
-    }
-};
 use serde_json::{
     json
 };
@@ -49,7 +44,7 @@ pub struct PocketApiTokenReceiver{
 }
 
 impl PocketApiTokenReceiver {
-    pub fn new(config: Arc<PocketApiConfig>) -> PocketApiTokenReceiver {
+    pub fn new(config: PocketApiConfig) -> PocketApiTokenReceiver {
         let request_builder = PocketRequestBuilder::new(config);
         PocketApiTokenReceiver{
             request_builder

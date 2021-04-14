@@ -1,9 +1,6 @@
 use std::{
     ops::{
         Deref
-    }, 
-    sync::{
-        Arc
     }
 };
 use cow_arc::{
@@ -22,13 +19,13 @@ use crate::{
 /// которое он имеет сейчас на момент работы
 #[derive(Debug, Clone)]
 pub struct PocketRequestBuilder {
-    base: Arc<PocketApiConfig>,
+    base: PocketApiConfig,
     api_token: CowArc<Option<String>>,
     path_segments: CowArc<Vec<String>>,
     json: CowArc<Option<serde_json::Value>>,
 }
 impl<'a> PocketRequestBuilder {
-    pub fn new(config: Arc<PocketApiConfig>) -> PocketRequestBuilder {
+    pub fn new(config: PocketApiConfig) -> PocketRequestBuilder {
 
         PocketRequestBuilder{
             base: config,
