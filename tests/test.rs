@@ -39,11 +39,12 @@ fn initialize_logs() {
 
 async fn receive_token(config: PocketApiConfig) -> String{
 // Получатель токена
-    let token_receiver = PocketApiTokenReceiver::new(config.clone());
+    let token_receiver = PocketApiTokenReceiver::new(config.clone(), 
+                                                     "http://127.0.0.1:9999/callback".to_string());
 
     // Инфа по аутентфикации и авторизации пользователя
     let auth_info = token_receiver
-        .optain_user_auth_info("http://127.0.0.1:9999/callback".to_string())
+        .optain_user_auth_info()
         .await
         .expect("Auth info receive failed");
     debug!("Auth info: {}", auth_info);

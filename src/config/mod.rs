@@ -20,7 +20,8 @@ pub struct PocketApiConfig {
     inner: Arc<Inner>
 }
 impl PocketApiConfig{
-    pub fn new_default(http_client: reqwest::Client, api_consumer_key: String) -> PocketApiConfig {
+    pub fn new_default(http_client: reqwest::Client, 
+                       api_consumer_key: String) -> PocketApiConfig {
         let inner = Arc::new(Inner{
             http_client,
             api_consumer_key,

@@ -40,28 +40,30 @@ pub struct AuthInfo{
 
 #[derive(Debug)]
 pub struct PocketApiTokenReceiver{
-    request_builder: PocketRequestBuilder
+    request_builder: PocketRequestBuilder,
+    redirect_uri: String
 }
 
 impl PocketApiTokenReceiver {
-    pub fn new(config: PocketApiConfig) -> PocketApiTokenReceiver {
+    pub fn new(config: PocketApiConfig, redirect_uri: String) -> PocketApiTokenReceiver {
         let request_builder = PocketRequestBuilder::new(config);
         PocketApiTokenReceiver{
-            request_builder
+            request_builder,
+            redirect_uri
         }
     }
 
     /// Данный метод выдает url для подтверждения пользователем разрешений на использование приложения
     /// После этого уже можно полноценно получать токен
     #[instrument(skip(self))]
-    pub async fn optain_user_auth_info(&self, redirect_uri: String) -> Result<AuthInfo, PocketApiError>{
+    pub async fn optain_user_auth_info(&self) -> Result<AuthInfo, PocketApiError>{
         let req = self
             .request_builder
             .clone()
             .join_path("oauth".to_string())
             .join_path("request".to_string())
             .json(json!({
-                "redirect_uri": redirect_uri
+                "redirect_uri": self.redirect_uri
             }))
             .build()?;
         
@@ -77,7 +79,7 @@ impl PocketApiTokenReceiver {
         auth_url
             .query_pairs_mut()
             .append_pair("request_token", &resp.code)
-            .append_pair("redirect_uri", &redirect_uri);
+            .append_pair("redirect_uri", &self.redirect_uri);
         debug!("Auth url: {}", auth_url);
 
         Ok(AuthInfo{
